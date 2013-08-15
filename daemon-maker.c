@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -69,9 +70,20 @@ void daemonize ()
     //fclose(stdout);
     //fclose(stderr);
 
+    time_t start;
+    time_t curr; 
+   
+    time(&start); 
+
     while(1)
     {
         system(command);
+
+        curr = time(&curr);
+        int time = (long) difftime(curr, start);
+        if(time > daemon_time)
+            break;
+
         sleep(interval);
     }
 
@@ -96,18 +108,18 @@ void parseargs (int argc, char **argv)
             case 'c':
                 command = malloc(strlen(optarg)+1);
                 strcpy(command, optarg);
-                printf("i:%s\n", optarg);
+                printf("c:%s\n", optarg);
                 break;
             
             case 'i':
-                printf("t:%s\n", optarg);
+                printf("i:%s\n", optarg);
                 str = malloc(strlen(optarg)+1);
                 strcpy(str, optarg);
                 interval = atoi(str);
                 break;
             
             case 't':
-                printf("l:%s\n", optarg);
+                printf("t:%s\n", optarg);
                 str = malloc(strlen(optarg)+1);
                 strcpy(str, optarg);
                 daemon_time = atoi(str);
