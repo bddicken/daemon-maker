@@ -5,42 +5,85 @@
 
 int opt = 0;
 int start_daemon = 0;
+int daemon_time = 0;
 int interval = 0;
-char *input_file_name = "";
-char *output_file_name = "";
+char *command = "";
+char working_dir[1024];
 
+void getworkingdir ();
+void daemonize ();
 void parseargs (int argc, char **argv);
 
 #define HELP \
 " \n \
 daemon-maker (dm) is a program designed to make daemon creation super easy. \n \
  \n \
-First, you must create a file with a series of bash commands (relative to \n \
-the root directory). Then, run dm and pass the file name using the `-i` \n \
-option. Set the interval you want the deamon to be executed at (in seconds) \n \
-using the -t option. \n \
+Simply pass a command to the `dm` execuatble with the `-c` flag, set an interval \n \
+using the `-i` flag, and set a time limit using the `-t` flag. #boom. \n \
 \n \
 options: \n \
 -h [y/n] : Show this help message, then exit \n \
--i [input file] : The input file with a series of bash commands. \n \
--o [output file] : The name of the ouput daemon executable. \n \
--t [time In seconds] : the interval to execute the daemon at. \n \
--s [y/n] : If `y`, the daemon immediately begins exection after creation \n \
+-c [command] : Shell command to daemonize (in quotes) \n \
+-i [time In seconds] : the interval to execute the daemon at. \n \
+-t [time In seconds] : the amout of time to keep the daemon running for. \n \
  \n \
 "
 
 int main (int argc, char **argv)
 {
     parseargs(argc, argv);
+               
+    getworkingdir();
+
+    daemonize();
                 
     return EXIT_SUCCESS;    
+}
+
+void getworkingdir ()
+{
+    char *res = getcwd(working_dir, sizeof(working_dir));
+    if(res == NULL)
+        exit(EXIT_FAILURE);
+    printf("working dir set to: %s\n", working_dir);
+}
+
+void daemonize ()
+{
+    pid_t pid, sid;
+
+    pid = fork();
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    umask(0);
+
+    sid = setsid();
+    if (sid < 0)
+        exit(EXIT_FAILURE);
+
+    //fclose(stdin);
+    //fclose(stdout);
+    //fclose(stderr);
+
+    while(1)
+    {
+        system(command);
+        sleep(interval);
+    }
+
+    exit(EXIT_SUCCESS);
+
 }
 
 void parseargs (int argc, char **argv)
 {
     char *str = NULL;
 
-    while ((opt = getopt(argc, argv, "t:s:i:h:o:")) != -1)
+    while ((opt = getopt(argc, argv, "i:c:t:h:")) != -1)
     {
         switch (opt) {
             case 'h':
@@ -50,34 +93,29 @@ void parseargs (int argc, char **argv)
                 }
                 break;
 
-            case 'i':
-                input_file_name = malloc(strlen(optarg)+1);
-                strcpy(input_file_name, optarg);
+            case 'c':
+                command = malloc(strlen(optarg)+1);
+                strcpy(command, optarg);
                 printf("i:%s\n", optarg);
                 break;
             
-            case 'o':
-                output_file_name = malloc(strlen(optarg)+1);
-                strcpy(output_file_name, optarg);
-                printf("o:%s\n", optarg);
-                break;
-            
-            case 't':
+            case 'i':
                 printf("t:%s\n", optarg);
                 str = malloc(strlen(optarg)+1);
                 strcpy(str, optarg);
                 interval = atoi(str);
                 break;
             
-            case 's':
-                printf("s:%s\n", optarg);
+            case 't':
+                printf("l:%s\n", optarg);
                 str = malloc(strlen(optarg)+1);
                 strcpy(str, optarg);
-                start_daemon = atoi(str);
+                daemon_time = atoi(str);
                 break;
             
             default:
-                printf("nada\n");
+                printf("invalid argument\n");
+                exit(EXIT_FAILURE);
                 break;
         }
     }
