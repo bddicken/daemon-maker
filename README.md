@@ -13,4 +13,4 @@ This will start a background daemon process, that runs `make` in the current dir
 
 ### Building and Running
 
-To build daemon-maker, just run `make`. `make` will spit out an executable file, `dm`. Put this in your `PATH`. 
+To build daemon-maker, just run `make`. `make` will spit out an executable file, `dm`. Put this in your PATH. 
